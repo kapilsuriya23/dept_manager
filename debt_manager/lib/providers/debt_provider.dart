@@ -2,14 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../data/models/customer_model.dart';
 import '../data/models/debt_model.dart';
+import '../data/models/credit_model.dart';
 import '../data/repositories/debt_repository.dart';
 
-// ── Repository provider ────────────────────────────────────
 final repositoryProvider = Provider<DebtRepository>((ref) {
-  throw UnimplementedError('Override repositoryProvider in ProviderScope');
+  throw UnimplementedError('Override in ProviderScope');
 });
 
-// ── Customers ──────────────────────────────────────────────
 final customersProvider =
     StateNotifierProvider<CustomerNotifier, List<CustomerModel>>(
   (ref) => CustomerNotifier(ref.watch(repositoryProvider)),
@@ -17,7 +16,6 @@ final customersProvider =
 
 class CustomerNotifier extends StateNotifier<List<CustomerModel>> {
   final DebtRepository _repo;
-
   CustomerNotifier(this._repo) : super(_repo.getAllCustomers());
 
   Future<void> addCustomer({
@@ -41,12 +39,9 @@ class CustomerNotifier extends StateNotifier<List<CustomerModel>> {
     state = _repo.getAllCustomers();
   }
 
-  void refresh() {
-    state = _repo.getAllCustomers();
-  }
+  void refresh() => state = _repo.getAllCustomers();
 }
 
-// ── Debts for a customer ───────────────────────────────────
 final customerDebtsProvider =
     StateNotifierProvider.family<DebtNotifier, List<DebtModel>, String>(
   (ref, customerId) => DebtNotifier(ref.watch(repositoryProvider), customerId),
@@ -55,48 +50,85 @@ final customerDebtsProvider =
 class DebtNotifier extends StateNotifier<List<DebtModel>> {
   final DebtRepository _repo;
   final String customerId;
-
   DebtNotifier(this._repo, this.customerId)
       : super(_repo.getDebtsForCustomer(customerId));
 
-  void refresh() {
-    state = _repo.getDebtsForCustomer(customerId);
-  }
+  void refresh() => state = _repo.getDebtsForCustomer(customerId);
 }
 
-// ── Debt actions ───────────────────────────────────────────
+final customerCreditsProvider =
+    StateNotifierProvider.family<CreditNotifier, List<CreditModel>, String>(
+  (ref, customerId) =>
+      CreditNotifier(ref.watch(repositoryProvider), customerId),
+);
+
+class CreditNotifier extends StateNotifier<List<CreditModel>> {
+  final DebtRepository _repo;
+  final String customerId;
+  CreditNotifier(this._repo, this.customerId)
+      : super(_repo.getCreditsForCustomer(customerId));
+
+  void refresh() => state = _repo.getCreditsForCustomer(customerId);
+}
+
 final debtActionsProvider = Provider((ref) => DebtActions(ref));
 
 class DebtActions {
   final Ref _ref;
   DebtActions(this._ref);
 
+  void _refreshAll(String customerId) {
+    _ref.read(customerDebtsProvider(customerId).notifier).refresh();
+    _ref.read(customerCreditsProvider(customerId).notifier).refresh();
+    _ref.read(customersProvider.notifier).refresh();
+  }
+
   Future<void> addDebt({
     required String customerId,
     required double amount,
     required String description,
+    required DateTime date, // ← custom date
   }) async {
     final debt = DebtModel(
       id: const Uuid().v4(),
       customerId: customerId,
       amount: amount,
       description: description,
-      date: DateTime.now(),
+      date: date,
     );
     await _ref.read(repositoryProvider).addDebt(debt);
-    _ref.read(customerDebtsProvider(customerId).notifier).refresh();
-    _ref.read(customersProvider.notifier).refresh();
+    _refreshAll(customerId);
+  }
+
+  Future<void> addCredit({
+    required String customerId,
+    required double amount,
+    required String description,
+    required DateTime date, // ← custom date
+  }) async {
+    final credit = CreditModel(
+      id: const Uuid().v4(),
+      customerId: customerId,
+      amount: amount,
+      description: description,
+      date: date,
+    );
+    await _ref.read(repositoryProvider).addCredit(credit);
+    _refreshAll(customerId);
   }
 
   Future<void> markPaid(String customerId, String debtId) async {
     await _ref.read(repositoryProvider).markDebtPaid(debtId);
-    _ref.read(customerDebtsProvider(customerId).notifier).refresh();
-    _ref.read(customersProvider.notifier).refresh();
+    _refreshAll(customerId);
   }
 
   Future<void> deleteDebt(String customerId, String debtId) async {
     await _ref.read(repositoryProvider).deleteDebt(debtId);
-    _ref.read(customerDebtsProvider(customerId).notifier).refresh();
-    _ref.read(customersProvider.notifier).refresh();
+    _refreshAll(customerId);
+  }
+
+  Future<void> deleteCredit(String customerId, String creditId) async {
+    await _ref.read(repositoryProvider).deleteCredit(creditId);
+    _refreshAll(customerId);
   }
 }

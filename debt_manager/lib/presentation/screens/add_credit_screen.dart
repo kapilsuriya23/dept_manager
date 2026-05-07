@@ -5,15 +5,15 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/debt_provider.dart';
 
-class AddDebtScreen extends ConsumerStatefulWidget {
+class AddCreditScreen extends ConsumerStatefulWidget {
   final String customerId;
-  const AddDebtScreen({super.key, required this.customerId});
+  const AddCreditScreen({super.key, required this.customerId});
 
   @override
-  ConsumerState<AddDebtScreen> createState() => _AddDebtScreenState();
+  ConsumerState<AddCreditScreen> createState() => _AddCreditScreenState();
 }
 
-class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
+class _AddCreditScreenState extends ConsumerState<AddCreditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
@@ -36,7 +36,7 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: ColorScheme.light(
-            primary: AppTheme.dangerColor,
+            primary: AppTheme.primaryGreen,
             onPrimary: Colors.white,
             surface: AppTheme.cardBg,
             onSurface: AppTheme.textPrimary,
@@ -52,7 +52,7 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await ref.read(debtActionsProvider).addDebt(
+      await ref.read(debtActionsProvider).addCredit(
             customerId: widget.customerId,
             amount: double.parse(_amountCtrl.text.trim()),
             description: _descCtrl.text.trim(),
@@ -68,7 +68,7 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.bgPage,
-      appBar: AppBar(title: const Text('Add Debt')),
+      appBar: AppBar(title: const Text('Add Credit')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -78,19 +78,19 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppTheme.dangerColor.withOpacity(0.07),
+                color: AppTheme.primaryGreen.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
                 border:
-                    Border.all(color: AppTheme.dangerColor.withOpacity(0.2)),
+                    Border.all(color: AppTheme.primaryGreen.withOpacity(0.25)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.arrow_upward_rounded,
-                      color: AppTheme.dangerColor, size: 20),
+                  Icon(Icons.arrow_downward_rounded,
+                      color: AppTheme.primaryGreen, size: 20),
                   const SizedBox(width: 10),
-                  Text('Recording a new debt entry',
+                  Text('Recording a credit payment',
                       style: TextStyle(
-                          color: AppTheme.dangerColor,
+                          color: AppTheme.primaryGreen,
                           fontWeight: FontWeight.w500,
                           fontSize: 13)),
                 ],
@@ -105,9 +105,14 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
                   const TextInputType.numberWithOptions(decimal: true),
               style: TextStyle(color: AppTheme.textPrimary),
               decoration: InputDecoration(
-                labelText: 'Debt Amount (₹)',
+                labelText: 'Credit Amount (₹)',
                 prefixIcon:
-                    Icon(Icons.currency_rupee, color: AppTheme.textHint),
+                    Icon(Icons.currency_rupee, color: AppTheme.primaryGreen),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: AppTheme.primaryGreen, width: 2),
+                ),
               ),
               validator: (v) {
                 if (v!.trim().isEmpty) return 'Enter amount';
@@ -124,11 +129,15 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
               style: TextStyle(color: AppTheme.textPrimary),
               maxLines: 3,
               decoration: InputDecoration(
-                labelText: 'Description / Items',
+                labelText: 'Note (e.g. Cash received, UPI)',
                 prefixIcon: Icon(Icons.notes, color: AppTheme.textHint),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: AppTheme.primaryGreen, width: 2),
+                ),
               ),
-              validator: (v) =>
-                  v!.trim().isEmpty ? 'Description required' : null,
+              validator: (v) => v!.trim().isEmpty ? 'Add a note' : null,
             ),
             const SizedBox(height: 16),
 
@@ -179,7 +188,7 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
               child: ElevatedButton(
                 onPressed: _loading ? null : _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.dangerColor,
+                  backgroundColor: AppTheme.primaryGreen,
                 ),
                 child: _loading
                     ? const SizedBox(
@@ -187,7 +196,7 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                             color: Colors.white, strokeWidth: 2))
-                    : const Text('Save Debt',
+                    : const Text('Save Credit',
                         style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
