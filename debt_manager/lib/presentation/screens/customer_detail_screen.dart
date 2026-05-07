@@ -13,35 +13,25 @@ class CustomerDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final customers = ref.watch(customersProvider);
-    final customerList = customers.where((c) => c.id == customerId).toList();
-
-    if (customerList.isEmpty) {
-      return const Scaffold(
-        body: Center(child: Text('Customer not found')),
-      );
+    final match = customers.where((c) => c.id == customerId).toList();
+    if (match.isEmpty) {
+      return const Scaffold(body: Center(child: Text('Customer not found')));
     }
-
-    final customer = customerList.first;
+    final customer = match.first;
     final debts = ref.watch(customerDebtsProvider(customerId));
     final unpaid = debts.where((d) => !d.isPaid).toList();
     final paid = debts.where((d) => d.isPaid).toList();
     final totalOwed = unpaid.fold(0.0, (s, d) => s + d.amount);
 
     return Scaffold(
+      backgroundColor: AppTheme.bgPage,
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              customer.name,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            Text(
-              customer.phone,
-              style: const TextStyle(fontSize: 12, color: Colors.white54),
-            ),
-          ],
-        ),
+        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(customer.name,
+              style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(customer.phone,
+              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+        ]),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -51,25 +41,25 @@ class CustomerDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: totalOwed > 0
-                  ? AppTheme.dangerColor.withOpacity(0.15)
-                  : AppTheme.successColor.withOpacity(0.15),
+                  ? AppTheme.dangerColor.withOpacity(0.08)
+                  : AppTheme.primaryGreen.withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: totalOwed > 0
-                    ? AppTheme.dangerColor
-                    : AppTheme.successColor,
-                width: 1,
+                    ? AppTheme.dangerColor.withOpacity(0.3)
+                    : AppTheme.borderColor,
               ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Amount Owed',
-                    style: TextStyle(color: Colors.white70)),
+                Text('Amount Owed',
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
                 Text(
                   '₹${totalOwed.toStringAsFixed(2)}',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 26,
                     fontWeight: FontWeight.w700,
                     color: totalOwed > 0
                         ? AppTheme.dangerColor
@@ -79,18 +69,15 @@ class CustomerDetailScreen extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // ── Pending debts ────────────────────────────────
+          // ── Pending ──────────────────────────────────────
           if (unpaid.isNotEmpty) ...[
-            const Text(
-              'Pending Debts',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text('Pending Debts',
+                style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14)),
             const SizedBox(height: 8),
             ...unpaid.map((d) => _DebtTile(
                   debt: d,
@@ -102,13 +89,11 @@ class CustomerDetailScreen extends ConsumerWidget {
                 )),
           ],
 
-          // ── Cleared debts ────────────────────────────────
+          // ── Cleared ──────────────────────────────────────
           if (paid.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text(
-              'Cleared Debts',
-              style: TextStyle(color: Colors.white38, fontSize: 13),
-            ),
+            Text('Cleared Debts',
+                style: TextStyle(color: AppTheme.textHint, fontSize: 14)),
             const SizedBox(height: 8),
             ...paid.map((d) => _DebtTile(
                   debt: d,
@@ -120,14 +105,12 @@ class CustomerDetailScreen extends ConsumerWidget {
           ],
 
           if (debts.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 40),
+            Padding(
+              padding: const EdgeInsets.only(top: 40),
               child: Center(
-                child: Text(
-                  'No debts yet.\nTap + to add one.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white38, fontSize: 14),
-                ),
+                child: Text('No debts yet. Tap + to add one.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppTheme.textHint, fontSize: 14)),
               ),
             ),
 
@@ -136,9 +119,9 @@ class CustomerDetailScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/customer/$customerId/add-debt'),
-        backgroundColor: AppTheme.accentColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Debt', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Debt',
+            style: TextStyle(fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -158,54 +141,64 @@ class _DebtTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  debt.description,
-                  style: TextStyle(
-                    color: isPaid ? Colors.white38 : Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  DateFormat('dd MMM yyyy').format(debt.date),
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
-                ),
-              ],
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.borderColor),
+        ),
+        child: Row(
+          children: [
+            // Status dot
+            Container(
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.only(right: 10),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isPaid ? AppTheme.primaryGreen : AppTheme.dangerColor,
+              ),
             ),
-          ),
-          Text(
-            '₹${debt.amount.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              color: isPaid ? Colors.white38 : AppTheme.dangerColor,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(debt.description,
+                      style: TextStyle(
+                        color:
+                            isPaid ? AppTheme.textHint : AppTheme.textPrimary,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        decoration: isPaid ? TextDecoration.lineThrough : null,
+                      )),
+                  const SizedBox(height: 3),
+                  Text(DateFormat('dd MMM yyyy').format(debt.date),
+                      style: TextStyle(color: AppTheme.textHint, fontSize: 12)),
+                ],
+              ),
             ),
-          ),
-          if (!isPaid && onPaid != null)
+            Text(
+              '₹${debt.amount.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: isPaid ? AppTheme.textHint : AppTheme.dangerColor,
+              ),
+            ),
+            if (!isPaid && onPaid != null)
+              IconButton(
+                icon: Icon(Icons.check_circle_outline,
+                    color: AppTheme.primaryGreen),
+                onPressed: onPaid,
+                tooltip: 'Mark paid',
+              ),
             IconButton(
-              icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-              onPressed: onPaid,
+              icon: Icon(Icons.delete_outline, color: AppTheme.textHint),
+              onPressed: onDelete,
             ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-            onPressed: onDelete,
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      );
 }

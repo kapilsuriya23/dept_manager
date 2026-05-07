@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/debt_provider.dart';
+import '../../core/theme/app_theme.dart';
 
 class AddDebtScreen extends ConsumerStatefulWidget {
   final String customerId;
@@ -52,10 +53,11 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
               controller: _amountCtrl,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: AppTheme.textPrimary),
               decoration: const InputDecoration(
                 labelText: 'Amount (₹)',
-                prefixIcon: Icon(Icons.currency_rupee, color: Colors.white38),
+                prefixIcon:
+                    Icon(Icons.currency_rupee, color: AppTheme.textHint),
               ),
               validator: (v) {
                 if (v!.trim().isEmpty) return 'Enter amount';
@@ -67,11 +69,10 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _descCtrl,
-              style: const TextStyle(color: Colors.white),
-              maxLines: 3,
+              style: TextStyle(color: AppTheme.textPrimary),
               decoration: const InputDecoration(
                 labelText: 'Description / Items',
-                prefixIcon: Icon(Icons.notes, color: Colors.white38),
+                prefixIcon: Icon(Icons.notes, color: AppTheme.textHint),
               ),
               validator: (v) =>
                   v!.trim().isEmpty ? 'Description required' : null,

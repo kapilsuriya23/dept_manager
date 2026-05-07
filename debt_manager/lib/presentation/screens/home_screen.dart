@@ -11,76 +11,92 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final customers = ref.watch(customersProvider);
-    final repo = ref.read(repositoryProvider);
-    final total = repo.getTotalOutstanding();
+    final total = ref.read(repositoryProvider).getTotalOutstanding();
 
     return Scaffold(
+      backgroundColor: AppTheme.bgPage,
       appBar: AppBar(
-        title: Column(
+        title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'DebtBook',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22),
-            ),
-            Text(
-              "Dad's Shop",
-              style: TextStyle(fontSize: 12, color: Colors.white54),
-            ),
+            Text('Chinthamani Debt Manager',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
           ],
         ),
       ),
       body: Column(
         children: [
-          // ── Total outstanding banner ─────────────────────
-          Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFF6B35), Color(0xFFFF8C61)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // ── Banner ──────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen,
+                borderRadius: BorderRadius.circular(20),
               ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Total Outstanding',
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '₹${total.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Total Outstanding',
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 13)),
+                      const SizedBox(height: 6),
+                      Text(
+                        '₹${total.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      children: [
+                        Text('${customers.length}',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700)),
+                        const Text('customers',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 11)),
+                      ],
+                    ),
                   ),
-                  child: Text(
-                    '${customers.length} customers',
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                  ),
-                ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Section label ────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Text('Customers:',
+                    style: TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    )),
               ],
             ),
           ),
 
-          // ── Customer list ────────────────────────────────
+          // ── List ─────────────────────────────────────────
           Expanded(
             child: customers.isEmpty
                 ? const _EmptyState()
@@ -100,10 +116,9 @@ class HomeScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/add-customer'),
-        backgroundColor: AppTheme.accentColor,
-        icon: const Icon(Icons.person_add, color: Colors.white),
-        label:
-            const Text('Add Customer', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.person_add),
+        label: const Text('Add Customer',
+            style: TextStyle(fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -111,25 +126,30 @@ class HomeScreen extends ConsumerWidget {
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
-
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.people_outline, size: 64, color: Colors.white24),
-          const SizedBox(height: 16),
-          const Text(
-            'No customers yet',
-            style: TextStyle(color: Colors.white54, fontSize: 16),
-          ),
-          const Text(
-            'Tap + to add your first customer',
-            style: TextStyle(color: Colors.white38, fontSize: 13),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.people_outline,
+                  size: 48, color: AppTheme.primaryGreen),
+            ),
+            const SizedBox(height: 16),
+            const Text('No customers yet',
+                style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            const Text('Tap + to add your first customer',
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+          ],
+        ),
+      );
 }

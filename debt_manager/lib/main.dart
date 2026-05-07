@@ -15,64 +15,42 @@ import 'providers/debt_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Init Hive
   await Hive.initFlutter();
   Hive.registerAdapter(CustomerModelAdapter());
   Hive.registerAdapter(DebtModelAdapter());
-
-  // Encrypted storage
   final encKey = await EncryptionService.getOrCreateHiveKey();
   final cipher = HiveAesCipher(encKey);
-
   final repo = DebtRepository();
   await repo.init(cipher);
-
   runApp(
     ProviderScope(
-      overrides: [
-        repositoryProvider.overrideWithValue(repo),
-      ],
+      overrides: [repositoryProvider.overrideWithValue(repo)],
       child: const DebtManagerApp(),
     ),
   );
 }
 
-final GoRouter _router = GoRouter(
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const HomeScreen(),
-    ),
-    GoRoute(
-      path: '/add-customer',
-      builder: (context, state) => const AddCustomerScreen(),
-    ),
-    GoRoute(
-      path: '/customer/:id',
-      builder: (context, state) => CustomerDetailScreen(
-        customerId: state.pathParameters['id']!,
-      ),
-    ),
-    GoRoute(
-      path: '/customer/:id/add-debt',
-      builder: (context, state) => AddDebtScreen(
-        customerId: state.pathParameters['id']!,
-      ),
-    ),
-  ],
-);
+final GoRouter _router = GoRouter(routes: [
+  GoRoute(path: '/', builder: (c, s) => const HomeScreen()),
+  GoRoute(path: '/add-customer', builder: (c, s) => const AddCustomerScreen()),
+  GoRoute(
+    path: '/customer/:id',
+    builder: (c, s) =>
+        CustomerDetailScreen(customerId: s.pathParameters['id']!),
+  ),
+  GoRoute(
+    path: '/customer/:id/add-debt',
+    builder: (c, s) => AddDebtScreen(customerId: s.pathParameters['id']!),
+  ),
+]);
 
 class DebtManagerApp extends StatelessWidget {
   const DebtManagerApp({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'DebtBook',
-      theme: AppTheme.dark,
-      routerConfig: _router,
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  Widget build(BuildContext context) => MaterialApp.router(
+        title: 'Chinthamani Debt Managerr',
+        theme: AppTheme.light, // ← changed
+        routerConfig: _router,
+        debugShowCheckedModeBanner: false,
+      );
 }
