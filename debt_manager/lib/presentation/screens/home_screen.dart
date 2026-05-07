@@ -16,13 +16,43 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.bgPage,
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Chinthamani Debt Manager',
+            const Text('Chinthamani Debt Manager',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
           ],
         ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: AppTheme.textPrimary),
+            color: AppTheme.cardBg,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: AppTheme.borderColor),
+            ),
+            onSelected: (value) {
+              if (value == 'privacy') {
+                context.push('/privacy-policy');
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'privacy',
+                child: Row(
+                  children: [
+                    Icon(Icons.shield_outlined,
+                        color: AppTheme.primaryGreen, size: 18),
+                    const SizedBox(width: 10),
+                    Text('Privacy Policy',
+                        style: TextStyle(
+                            color: AppTheme.textPrimary, fontSize: 14)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -82,11 +112,11 @@ class HomeScreen extends ConsumerWidget {
           ),
 
           // ── Section label ────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Text('Customers:',
+                Text('Customers',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
                       fontWeight: FontWeight.w600,
@@ -126,6 +156,7 @@ class HomeScreen extends ConsumerWidget {
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
+
   @override
   Widget build(BuildContext context) => Center(
         child: Column(
@@ -137,17 +168,17 @@ class _EmptyState extends StatelessWidget {
                 color: AppTheme.primaryGreen.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.people_outline,
+              child: Icon(Icons.people_outline,
                   size: 48, color: AppTheme.primaryGreen),
             ),
             const SizedBox(height: 16),
-            const Text('No customers yet',
+            Text('No customers yet',
                 style: TextStyle(
                     color: AppTheme.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
-            const Text('Tap + to add your first customer',
+            Text('Tap + to add your first customer',
                 style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
           ],
         ),

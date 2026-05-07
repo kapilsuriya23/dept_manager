@@ -72,39 +72,15 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           children: [
-            // ── Info banner ──────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.dangerColor.withOpacity(0.07),
-                borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: AppTheme.dangerColor.withOpacity(0.2)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.arrow_upward_rounded,
-                      color: AppTheme.dangerColor, size: 20),
-                  const SizedBox(width: 10),
-                  Text('Recording a new debt entry',
-                      style: TextStyle(
-                          color: AppTheme.dangerColor,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 13)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
             // ── Amount ───────────────────────────────────
             TextFormField(
               controller: _amountCtrl,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              style: TextStyle(color: AppTheme.textPrimary),
-              decoration: InputDecoration(
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: const InputDecoration(
                 labelText: 'Debt Amount (₹)',
                 prefixIcon:
                     Icon(Icons.currency_rupee, color: AppTheme.textHint),

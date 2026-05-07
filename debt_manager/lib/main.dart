@@ -13,6 +13,7 @@ import 'presentation/screens/add_customer_screen.dart';
 import 'presentation/screens/customer_detail_screen.dart';
 import 'presentation/screens/add_debt_screen.dart';
 import 'presentation/screens/add_credit_screen.dart';
+import 'presentation/screens/privacy_policy_screen.dart';
 import 'providers/debt_provider.dart';
 
 Future<void> main() async {
@@ -60,6 +61,10 @@ final GoRouter _router = GoRouter(
       builder: (c, s) => AddCreditScreen(
         customerId: s.pathParameters['id']!,
       ),
+    ),
+    GoRoute(
+      path: '/privacy-policy',
+      builder: (c, s) => const PrivacyPolicyScreen(),
     ),
   ],
 );
