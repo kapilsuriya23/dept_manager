@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/debt_provider.dart';
 import '../widgets/customer_card.dart';
+import '../../providers/auth_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -31,24 +32,35 @@ class HomeScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(color: AppTheme.borderColor),
             ),
-            onSelected: (value) {
+            onSelected: (value) async {
               if (value == 'privacy') {
                 context.push('/privacy-policy');
+              } else if (value == 'logout') {
+                await ref.read(authProvider.notifier).logout();
+                if (context.mounted) context.go('/login');
               }
             },
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'privacy',
-                child: Row(
-                  children: [
-                    Icon(Icons.shield_outlined,
-                        color: AppTheme.primaryGreen, size: 18),
-                    const SizedBox(width: 10),
-                    Text('Privacy Policy',
-                        style: TextStyle(
-                            color: AppTheme.textPrimary, fontSize: 14)),
-                  ],
-                ),
+                child: Row(children: [
+                  Icon(Icons.shield_outlined,
+                      color: AppTheme.primaryGreen, size: 18),
+                  const SizedBox(width: 10),
+                  Text('Privacy Policy',
+                      style:
+                          TextStyle(color: AppTheme.textPrimary, fontSize: 14)),
+                ]),
+              ),
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(children: [
+                  Icon(Icons.logout, color: AppTheme.dangerColor, size: 18),
+                  const SizedBox(width: 10),
+                  Text('Logout',
+                      style:
+                          TextStyle(color: AppTheme.dangerColor, fontSize: 14)),
+                ]),
               ),
             ],
           ),

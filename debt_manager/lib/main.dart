@@ -8,6 +8,9 @@ import 'data/models/customer_model.dart';
 import 'data/models/debt_model.dart';
 import 'data/models/credit_model.dart';
 import 'data/repositories/debt_repository.dart';
+import 'presentation/screens/splash_screen.dart';
+import 'presentation/screens/login_screen.dart';
+import 'presentation/screens/register_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/add_customer_screen.dart';
 import 'presentation/screens/customer_detail_screen.dart';
@@ -35,7 +38,20 @@ Future<void> main() async {
 }
 
 final GoRouter _router = GoRouter(
+  initialLocation: '/splash',
   routes: [
+    GoRoute(
+      path: '/splash',
+      builder: (c, s) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (c, s) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/register',
+      builder: (c, s) => const RegisterScreen(),
+    ),
     GoRoute(
       path: '/',
       builder: (c, s) => const HomeScreen(),
