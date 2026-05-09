@@ -1,134 +1,241 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
-import '../data/models/customer_model.dart';
-import '../data/models/debt_model.dart';
-import '../data/models/credit_model.dart';
-import '../data/repositories/debt_repository.dart';
+import '../data/services/customer_service.dart';
+import '../data/services/debt_service.dart';
+import '../data/services/credit_service.dart';
 
-final repositoryProvider = Provider<DebtRepository>((ref) {
-  throw UnimplementedError('Override in ProviderScope');
-});
+// ── Service providers ──────────────────────────────────────
+final customerServiceProvider =
+    Provider<CustomerService>((_) => CustomerService());
+final debtServiceProvider = Provider<DebtService>((_) => DebtService());
+final creditServiceProvider = Provider<CreditService>((_) => CreditService());
 
-final customersProvider =
-    StateNotifierProvider<CustomerNotifier, List<CustomerModel>>(
-  (ref) => CustomerNotifier(ref.watch(repositoryProvider)),
-);
+// ── Customer state ─────────────────────────────────────────
+class CustomerState {
+  final List<Map<String, dynamic>> customers;
+  final bool loading;
+  final String? error;
 
-class CustomerNotifier extends StateNotifier<List<CustomerModel>> {
-  final DebtRepository _repo;
-  CustomerNotifier(this._repo) : super(_repo.getAllCustomers());
+  const CustomerState({
+    this.customers = const [],
+    this.loading = false,
+    this.error,
+  });
 
-  Future<void> addCustomer({
+  CustomerState copyWith({
+    List<Map<String, dynamic>>? customers,
+    bool? loading,
+    String? error,
+  }) =>
+      CustomerState(
+        customers: customers ?? this.customers,
+        loading: loading ?? this.loading,
+        error: error,
+      );
+}
+
+class CustomerNotifier extends StateNotifier<CustomerState> {
+  final CustomerService _service;
+  CustomerNotifier(this._service) : super(const CustomerState()) {
+    fetchAll();
+  }
+
+  Future<void> fetchAll() async {
+    state = state.copyWith(loading: true, error: null);
+    try {
+      final list = await _service.getAll();
+      state = state.copyWith(customers: list, loading: false);
+    } catch (e) {
+      state = state.copyWith(loading: false, error: e.toString());
+    }
+  }
+
+  Future<bool> addCustomer({
     required String name,
     required String phone,
     String? address,
   }) async {
-    final customer = CustomerModel(
-      id: const Uuid().v4(),
-      name: name,
-      phone: phone,
-      address: address,
-      createdAt: DateTime.now(),
-    );
-    await _repo.addCustomer(customer);
-    state = _repo.getAllCustomers();
+    try {
+      await _service.create(name: name, phone: phone, address: address);
+      await fetchAll();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
   }
 
-  Future<void> deleteCustomer(String id) async {
-    await _repo.deleteCustomer(id);
-    state = _repo.getAllCustomers();
+  Future<bool> deleteCustomer(String id) async {
+    try {
+      await _service.delete(id);
+      await fetchAll();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
   }
-
-  void refresh() => state = _repo.getAllCustomers();
 }
 
-final customerDebtsProvider =
-    StateNotifierProvider.family<DebtNotifier, List<DebtModel>, String>(
-  (ref, customerId) => DebtNotifier(ref.watch(repositoryProvider), customerId),
+final customersProvider =
+    StateNotifierProvider<CustomerNotifier, CustomerState>(
+  (ref) => CustomerNotifier(ref.read(customerServiceProvider)),
 );
 
-class DebtNotifier extends StateNotifier<List<DebtModel>> {
-  final DebtRepository _repo;
-  final String customerId;
-  DebtNotifier(this._repo, this.customerId)
-      : super(_repo.getDebtsForCustomer(customerId));
+// ── Transaction state ──────────────────────────────────────
+class TransactionState {
+  final List<Map<String, dynamic>> debts;
+  final List<Map<String, dynamic>> credits;
+  final bool loading;
+  final String? error;
 
-  void refresh() => state = _repo.getDebtsForCustomer(customerId);
+  const TransactionState({
+    this.debts = const [],
+    this.credits = const [],
+    this.loading = false,
+    this.error,
+  });
+
+  double get totalDebt => debts
+      .where((d) => d['isPaid'] == false)
+      .fold(0.0, (s, d) => s + (d['amount'] as num).toDouble());
+
+  double get totalCredit =>
+      credits.fold(0.0, (s, c) => s + (c['amount'] as num).toDouble());
+
+  double get netBalance =>
+      (totalDebt - totalCredit).clamp(0.0, double.infinity);
+
+  TransactionState copyWith({
+    List<Map<String, dynamic>>? debts,
+    List<Map<String, dynamic>>? credits,
+    bool? loading,
+    String? error,
+  }) =>
+      TransactionState(
+        debts: debts ?? this.debts,
+        credits: credits ?? this.credits,
+        loading: loading ?? this.loading,
+        error: error,
+      );
 }
 
-final customerCreditsProvider =
-    StateNotifierProvider.family<CreditNotifier, List<CreditModel>, String>(
-  (ref, customerId) =>
-      CreditNotifier(ref.watch(repositoryProvider), customerId),
+class TransactionNotifier extends StateNotifier<TransactionState> {
+  final DebtService _debtService;
+  final CreditService _creditService;
+  final String customerId;
+
+  TransactionNotifier(
+    this._debtService,
+    this._creditService,
+    this.customerId,
+  ) : super(const TransactionState()) {
+    fetchAll();
+  }
+
+  Future<void> fetchAll() async {
+    state = state.copyWith(loading: true, error: null);
+    try {
+      final results = await Future.wait([
+        _debtService.getForCustomer(customerId),
+        _creditService.getForCustomer(customerId),
+      ]);
+      state = state.copyWith(
+        debts: results[0],
+        credits: results[1],
+        loading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(loading: false, error: e.toString());
+    }
+  }
+
+  Future<bool> addDebt({
+    required double amount,
+    required String description,
+    required DateTime date,
+  }) async {
+    try {
+      await _debtService.create(
+        customerId: customerId,
+        amount: amount,
+        description: description,
+        date: date,
+      );
+      await fetchAll();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> addCredit({
+    required double amount,
+    required String description,
+    required DateTime date,
+  }) async {
+    try {
+      await _creditService.create(
+        customerId: customerId,
+        amount: amount,
+        description: description,
+        date: date,
+      );
+      await fetchAll();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> markPaid(String debtId) async {
+    try {
+      await _debtService.markPaid(debtId);
+      await fetchAll();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> deleteDebt(String debtId) async {
+    try {
+      await _debtService.delete(debtId);
+      await fetchAll();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> deleteCredit(String creditId) async {
+    try {
+      await _creditService.delete(creditId);
+      await fetchAll();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
+  }
+}
+
+final transactionProvider =
+    StateNotifierProvider.family<TransactionNotifier, TransactionState, String>(
+  (ref, customerId) => TransactionNotifier(
+    ref.read(debtServiceProvider),
+    ref.read(creditServiceProvider),
+    customerId,
+  ),
 );
 
-class CreditNotifier extends StateNotifier<List<CreditModel>> {
-  final DebtRepository _repo;
-  final String customerId;
-  CreditNotifier(this._repo, this.customerId)
-      : super(_repo.getCreditsForCustomer(customerId));
-
-  void refresh() => state = _repo.getCreditsForCustomer(customerId);
-}
-
-final debtActionsProvider = Provider((ref) => DebtActions(ref));
-
-class DebtActions {
-  final Ref _ref;
-  DebtActions(this._ref);
-
-  void _refreshAll(String customerId) {
-    _ref.read(customerDebtsProvider(customerId).notifier).refresh();
-    _ref.read(customerCreditsProvider(customerId).notifier).refresh();
-    _ref.read(customersProvider.notifier).refresh();
-  }
-
-  Future<void> addDebt({
-    required String customerId,
-    required double amount,
-    required String description,
-    required DateTime date, // ← custom date
-  }) async {
-    final debt = DebtModel(
-      id: const Uuid().v4(),
-      customerId: customerId,
-      amount: amount,
-      description: description,
-      date: date,
-    );
-    await _ref.read(repositoryProvider).addDebt(debt);
-    _refreshAll(customerId);
-  }
-
-  Future<void> addCredit({
-    required String customerId,
-    required double amount,
-    required String description,
-    required DateTime date, // ← custom date
-  }) async {
-    final credit = CreditModel(
-      id: const Uuid().v4(),
-      customerId: customerId,
-      amount: amount,
-      description: description,
-      date: date,
-    );
-    await _ref.read(repositoryProvider).addCredit(credit);
-    _refreshAll(customerId);
-  }
-
-  Future<void> markPaid(String customerId, String debtId) async {
-    await _ref.read(repositoryProvider).markDebtPaid(debtId);
-    _refreshAll(customerId);
-  }
-
-  Future<void> deleteDebt(String customerId, String debtId) async {
-    await _ref.read(repositoryProvider).deleteDebt(debtId);
-    _refreshAll(customerId);
-  }
-
-  Future<void> deleteCredit(String customerId, String creditId) async {
-    await _ref.read(repositoryProvider).deleteCredit(creditId);
-    _refreshAll(customerId);
-  }
-}
+final totalOutstandingProvider = Provider<double>((ref) {
+  final state = ref.watch(customersProvider);
+  return state.customers.fold(
+    0.0,
+    (sum, c) => sum + ((c['netBalance'] as num?)?.toDouble() ?? 0.0),
+  );
+});

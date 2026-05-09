@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../providers/debt_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../providers/debt_provider.dart';
 
 class AddCustomerScreen extends ConsumerStatefulWidget {
   const AddCustomerScreen({super.key});
@@ -29,22 +29,32 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    try {
-      await ref.read(customersProvider.notifier).addCustomer(
-            name: _nameCtrl.text,
-            phone: _phoneCtrl.text,
-            address:
-                _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text,
-          );
-      if (mounted) context.pop();
-    } finally {
-      if (mounted) setState(() => _loading = false);
+    final ok = await ref.read(customersProvider.notifier).addCustomer(
+          name: _nameCtrl.text.trim(),
+          phone: _phoneCtrl.text.trim(),
+          address: _addressCtrl.text.trim().isEmpty
+              ? null
+              : _addressCtrl.text.trim(),
+        );
+    if (mounted) {
+      setState(() => _loading = false);
+      if (ok) {
+        context.pop();
+      } else {
+        final err =
+            ref.read(customersProvider).error ?? 'Failed to add customer';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(err),
+          backgroundColor: AppTheme.dangerColor,
+        ));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.bgPage,
       appBar: AppBar(title: const Text('New Customer')),
       body: Form(
         key: _formKey,
@@ -55,7 +65,8 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
               controller: _nameCtrl,
               label: 'Full Name',
               icon: Icons.person,
-              validator: (v) => v!.trim().isEmpty ? 'Name is required' : null,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Name is required' : null,
             ),
             const SizedBox(height: 16),
             _FormField(
@@ -64,7 +75,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
               icon: Icons.phone,
               keyboardType: TextInputType.phone,
               validator: (v) {
-                if (v!.trim().isEmpty) return 'Phone is required';
+                if (v == null || v.trim().isEmpty) return 'Phone is required';
                 if (!RegExp(r'^\d{10}$').hasMatch(v.trim())) {
                   return 'Enter valid 10-digit number';
                 }
@@ -87,14 +98,9 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Save Customer',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Save Customer',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ],
@@ -104,6 +110,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   }
 }
 
+// Fix: String? Function(String?)? for validator
 class _FormField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -125,10 +132,10 @@ class _FormField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
-      style: TextStyle(color: AppTheme.textPrimary), // ← changed
+      style: TextStyle(color: AppTheme.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: AppTheme.textHint), // ← changed
+        prefixIcon: Icon(icon, color: AppTheme.textHint),
       ),
     );
   }

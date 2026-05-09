@@ -17,7 +17,7 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
-  DateTime _selectedDate = DateTime.now();
+  DateTime _date = DateTime.now();
   bool _loading = false;
 
   @override
@@ -30,7 +30,7 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: _date,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       builder: (context, child) => Theme(
@@ -45,22 +45,30 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
         child: child!,
       ),
     );
-    if (picked != null) setState(() => _selectedDate = picked);
+    if (picked != null) setState(() => _date = picked);
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    try {
-      await ref.read(debtActionsProvider).addDebt(
-            customerId: widget.customerId,
-            amount: double.parse(_amountCtrl.text.trim()),
-            description: _descCtrl.text.trim(),
-            date: _selectedDate,
-          );
-      if (mounted) context.pop();
-    } finally {
-      if (mounted) setState(() => _loading = false);
+    final notifier = ref.read(transactionProvider(widget.customerId).notifier);
+    final ok = await notifier.addDebt(
+      amount: double.parse(_amountCtrl.text.trim()),
+      description: _descCtrl.text.trim(),
+      date: _date,
+    );
+    if (mounted) {
+      setState(() => _loading = false);
+      if (ok) {
+        context.pop();
+      } else {
+        final err = ref.read(transactionProvider(widget.customerId)).error ??
+            'Failed to add debt';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(err),
+          backgroundColor: AppTheme.dangerColor,
+        ));
+      }
     }
   }
 
@@ -72,29 +80,46 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           children: [
-            // ── Amount ───────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppTheme.dangerColor.withOpacity(0.07),
+                borderRadius: BorderRadius.circular(12),
+                border:
+                    Border.all(color: AppTheme.dangerColor.withOpacity(0.2)),
+              ),
+              child: Row(children: [
+                Icon(Icons.arrow_upward_rounded,
+                    color: AppTheme.dangerColor, size: 20),
+                const SizedBox(width: 10),
+                Text('Recording a new debt entry',
+                    style: TextStyle(
+                        color: AppTheme.dangerColor,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13)),
+              ]),
+            ),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _amountCtrl,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(color: AppTheme.textPrimary),
-              decoration: const InputDecoration(
+              style: TextStyle(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
                 labelText: 'Debt Amount (₹)',
                 prefixIcon:
                     Icon(Icons.currency_rupee, color: AppTheme.textHint),
               ),
               validator: (v) {
-                if (v!.trim().isEmpty) return 'Enter amount';
+                if (v == null || v.trim().isEmpty) return 'Enter amount';
                 final n = double.tryParse(v.trim());
                 if (n == null || n <= 0) return 'Enter a valid amount';
                 return null;
               },
             ),
             const SizedBox(height: 16),
-
-            // ── Description ──────────────────────────────
             TextFormField(
               controller: _descCtrl,
               style: TextStyle(color: AppTheme.textPrimary),
@@ -103,12 +128,11 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
                 labelText: 'Description / Items',
                 prefixIcon: Icon(Icons.notes, color: AppTheme.textHint),
               ),
-              validator: (v) =>
-                  v!.trim().isEmpty ? 'Description required' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Description required'
+                  : null,
             ),
             const SizedBox(height: 16),
-
-            // ── Date picker ──────────────────────────────
             GestureDetector(
               onTap: _pickDate,
               child: Container(
@@ -119,44 +143,36 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppTheme.borderColor),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.calendar_today,
-                        color: AppTheme.textHint, size: 20),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Date',
-                            style: TextStyle(
-                                color: AppTheme.textHint, fontSize: 12)),
-                        const SizedBox(height: 2),
-                        Text(
-                          DateFormat('dd MMMM yyyy').format(_selectedDate),
+                child: Row(children: [
+                  Icon(Icons.calendar_today,
+                      color: AppTheme.textHint, size: 20),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Date',
+                          style: TextStyle(
+                              color: AppTheme.textHint, fontSize: 12)),
+                      const SizedBox(height: 2),
+                      Text(DateFormat('dd MMMM yyyy').format(_date),
                           style: TextStyle(
                               color: AppTheme.textPrimary,
                               fontWeight: FontWeight.w500,
-                              fontSize: 15),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Icon(Icons.chevron_right,
-                        color: AppTheme.textHint, size: 20),
-                  ],
-                ),
+                              fontSize: 15)),
+                    ],
+                  ),
+                  const Spacer(),
+                  Icon(Icons.chevron_right, color: AppTheme.textHint, size: 20),
+                ]),
               ),
             ),
             const SizedBox(height: 32),
-
-            // ── Save button ──────────────────────────────
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _loading ? null : _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.dangerColor,
-                ),
+                    backgroundColor: AppTheme.dangerColor),
                 child: _loading
                     ? const SizedBox(
                         height: 20,

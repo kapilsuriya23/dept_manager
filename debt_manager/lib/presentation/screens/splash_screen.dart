@@ -4,40 +4,28 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 
-class SplashScreen extends ConsumerStatefulWidget {
+class SplashScreen extends ConsumerWidget {
   const SplashScreen({super.key});
 
   @override
-  ConsumerState<SplashScreen> createState() => _SplashScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // React as soon as auth state resolves from loading
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.status == AuthStatus.loading) return;
+      if (next.status == AuthStatus.authenticated) {
+        context.go('/');
+      } else {
+        context.go('/login');
+      }
+    });
 
-class _SplashScreenState extends ConsumerState<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _navigate();
-  }
-
-  Future<void> _navigate() async {
-    // Wait for auth check
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-
+    // If already resolved when splash builds (cached token check fast)
     final status = ref.read(authProvider).status;
     if (status == AuthStatus.authenticated) {
-      context.go('/');
-    } else {
-      context.go('/login');
+      WidgetsBinding.instance.addPostFrameCallback((_) => context.go('/'));
+    } else if (status == AuthStatus.unauthenticated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => context.go('/login'));
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Also react if auth resolves before delay
-    ref.listen(authProvider, (_, next) {
-      if (next.status == AuthStatus.authenticated) context.go('/');
-      if (next.status == AuthStatus.unauthenticated) context.go('/login');
-    });
 
     return Scaffold(
       backgroundColor: AppTheme.bgPage,
@@ -46,7 +34,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
                 color: AppTheme.primaryGreen.withOpacity(0.12),
                 shape: BoxShape.circle,
@@ -54,20 +42,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               child: Icon(Icons.store_rounded,
                   size: 56, color: AppTheme.primaryGreen),
             ),
-            const SizedBox(height: 20),
-            Text('DebtBook',
-                style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                )),
+            const SizedBox(height: 24),
+            Text(
+              'DebtBook',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text("Dad's Shop Manager",
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
-            const SizedBox(height: 40),
+            Text(
+              "Dad's Shop Manager",
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+            ),
+            const SizedBox(height: 48),
             SizedBox(
-              width: 24,
-              height: 24,
+              width: 28,
+              height: 28,
               child: CircularProgressIndicator(
                 strokeWidth: 2.5,
                 color: AppTheme.primaryGreen,

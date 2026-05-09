@@ -1,27 +1,20 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  // Change this to your backend URL
-  // For Android emulator use: http://10.0.2.2:5000
-  // For physical device use: http://YOUR_LOCAL_IP:5000
-  // For production use: https://your-deployed-api.com
-  static const String baseUrl = 'http://192.168.170.82:5000/api';
+  // ⚠️ Replace with YOUR PC's IP from ipconfig/ifconfig
+  // Must be on same WiFi network as your phone
+  static const String _ip = '192.168.31.248';
+  static const String baseUrl = 'http://$_ip:5000/api';
 
-  // Auth
   static const String register = '/auth/register';
   static const String login = '/auth/login';
   static const String me = '/auth/me';
 
-  // Customers
   static const String customers = '/customers';
   static String customer(String id) => '/customers/$id';
-
-  // Debts
-  static String debts(String customerId) => '/debts/$customerId';
+  static String debts(String cId) => '/debts/$cId';
   static String debtMarkPaid(String id) => '/debts/$id/mark-paid';
   static String debt(String id) => '/debts/$id';
-
-  // Credits
-  static String credits(String customerId) => '/credits/$customerId';
+  static String credits(String cId) => '/credits/$cId';
   static String credit(String id) => '/credits/$id';
 }
