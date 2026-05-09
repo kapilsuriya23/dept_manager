@@ -45,10 +45,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('DebtBook',
+            const Text('Chinthamani Fertilizers',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
-            Text(user?.shopName ?? "Dad's Shop",
-                style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
           ],
         ),
         actions: [

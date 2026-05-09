@@ -82,25 +82,6 @@ class _AddCreditScreenState extends ConsumerState<AddCreditScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: AppTheme.primaryGreen.withOpacity(0.25)),
-              ),
-              child: Row(children: [
-                Icon(Icons.arrow_downward_rounded,
-                    color: AppTheme.primaryGreen, size: 20),
-                const SizedBox(width: 10),
-                Text('Recording a credit payment',
-                    style: TextStyle(
-                        color: AppTheme.primaryGreen,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13)),
-              ]),
-            ),
             const SizedBox(height: 20),
             TextFormField(
               controller: _amountCtrl,

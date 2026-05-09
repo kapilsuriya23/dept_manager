@@ -82,25 +82,6 @@ class _AddDebtScreenState extends ConsumerState<AddDebtScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.dangerColor.withOpacity(0.07),
-                borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: AppTheme.dangerColor.withOpacity(0.2)),
-              ),
-              child: Row(children: [
-                Icon(Icons.arrow_upward_rounded,
-                    color: AppTheme.dangerColor, size: 20),
-                const SizedBox(width: 10),
-                Text('Recording a new debt entry',
-                    style: TextStyle(
-                        color: AppTheme.dangerColor,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13)),
-              ]),
-            ),
             const SizedBox(height: 20),
             TextFormField(
               controller: _amountCtrl,
