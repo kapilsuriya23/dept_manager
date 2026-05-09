@@ -44,7 +44,7 @@ class SplashScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'DebtBook',
+              'Chinthamani Fertilizers',
               style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 30,
@@ -53,7 +53,7 @@ class SplashScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              "Dad's Shop Manager",
+              "Credit & Debit Manager",
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 48),

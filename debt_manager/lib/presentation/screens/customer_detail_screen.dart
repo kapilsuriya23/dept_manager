@@ -372,18 +372,12 @@ class _DebtTile extends StatelessWidget {
                 color: isPaid ? AppTheme.textHint : AppTheme.dangerColor)),
         if (!isPaid && onPaid != null)
           IconButton(
-            icon: Icon(Icons.check_circle_outline,
-                color: AppTheme.primaryGreen, size: 20),
-            onPressed: onPaid,
+            icon:
+                Icon(Icons.delete_outline, color: AppTheme.textHint, size: 20),
+            onPressed: onDelete,
             padding: const EdgeInsets.all(6),
             constraints: const BoxConstraints(),
           ),
-        IconButton(
-          icon: Icon(Icons.delete_outline, color: AppTheme.textHint, size: 20),
-          onPressed: onDelete,
-          padding: const EdgeInsets.all(6),
-          constraints: const BoxConstraints(),
-        ),
       ]),
     );
   }
@@ -432,7 +426,7 @@ class _CreditTile extends StatelessWidget {
             ],
           ),
         ),
-        Text('- ₹${amount.toStringAsFixed(2)}',
+        Text('₹${amount.toStringAsFixed(2)}',
             style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
