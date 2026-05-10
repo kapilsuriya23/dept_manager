@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../screens/home_screen.dart';
 
 class SplashScreen extends ConsumerWidget {
   const SplashScreen({super.key});
@@ -26,6 +27,7 @@ class SplashScreen extends ConsumerWidget {
     } else if (status == AuthStatus.unauthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) => context.go('/login'));
     }
+    final user = ref.watch(authProvider).user;
 
     return Scaffold(
       backgroundColor: AppTheme.bgPage,
@@ -44,7 +46,7 @@ class SplashScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Chinthamani Fertilizers',
+              user?.shopName ?? 'DebtBook',
               style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 30,

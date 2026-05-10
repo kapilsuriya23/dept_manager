@@ -45,8 +45,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Chinthamani Fertilizers',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
+            Text(
+              user?.shopName ?? 'DebtBook',
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
         actions: [
