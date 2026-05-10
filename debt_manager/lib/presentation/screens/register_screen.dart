@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
@@ -30,6 +31,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _submit() async {
+    HapticFeedback.lightImpact();
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     final ok = await ref.read(authProvider.notifier).register(
@@ -39,14 +41,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         );
     if (mounted) {
       setState(() => _loading = false);
-      if (ok) {
-        context.go('/');
-      } else {
+      if (!ok) {
+        HapticFeedback.heavyImpact();
         final err = ref.read(authProvider).error ?? 'Registration failed';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(err),
             backgroundColor: AppTheme.dangerColor,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
@@ -105,8 +109,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       prefixIcon:
                           Icon(Icons.store_outlined, color: AppTheme.textHint),
                     ),
-                    validator: (v) =>
-                        v!.trim().isEmpty ? 'Shop name required' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Shop name required'
+                        : null,
                   ),
                   const SizedBox(height: 16),
 
@@ -120,7 +125,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       prefixIcon: Icon(Icons.phone, color: AppTheme.textHint),
                     ),
                     validator: (v) {
-                      if (v!.trim().isEmpty) return 'Phone required';
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Phone required';
+                      }
                       if (!RegExp(r'^\d{10}$').hasMatch(v.trim())) {
                         return 'Enter valid 10-digit number';
                       }
@@ -149,7 +156,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                     ),
                     validator: (v) {
-                      if (v!.isEmpty) return 'Password required';
+                      if (v == null || v.isEmpty) return 'Password required';
                       if (v.length < 6) return 'Min 6 characters';
                       return null;
                     },
@@ -167,29 +174,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           Icon(Icons.lock_outline, color: AppTheme.textHint),
                     ),
                     validator: (v) {
-                      if (v!.isEmpty) return 'Please confirm password';
-                      if (v != _passCtrl.text) return 'Passwords do not match';
+                      if (v == null || v.isEmpty) {
+                        return 'Please confirm password';
+                      }
+                      if (v != _passCtrl.text) {
+                        return 'Passwords do not match';
+                      }
                       return null;
                     },
                   ),
                   const SizedBox(height: 28),
 
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryGreen),
-                      child: _loading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2))
-                          : const Text('Create Account',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 15)),
-                    ),
+                  // ── Button ────────────────────────────────
+                  _ActionButton(
+                    label: 'Create Account',
+                    loading: _loading,
+                    onPressed: _submit,
+                    color: AppTheme.primaryGreen,
                   ),
                 ],
               ),
@@ -213,6 +214,95 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
             const SizedBox(height: 24),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatefulWidget {
+  final String label;
+  final bool loading;
+  final VoidCallback onPressed;
+  final Color color;
+
+  const _ActionButton({
+    required this.label,
+    required this.loading,
+    required this.onPressed,
+    required this.color,
+  });
+
+  @override
+  State<_ActionButton> createState() => _ActionButtonState();
+}
+
+class _ActionButtonState extends State<_ActionButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 80),
+    lowerBound: 0.0,
+    upperBound: 0.05,
+  );
+
+  late final Animation<double> _scale = Tween<double>(
+    begin: 1.0,
+    end: 0.95,
+  ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails _) => _ctrl.forward();
+  void _onTapUp(TapUpDetails _) => _ctrl.reverse();
+  void _onTapCancel() => _ctrl.reverse();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: widget.loading ? null : _onTapDown,
+      onTapUp: widget.loading ? null : _onTapUp,
+      onTapCancel: widget.loading ? null : _onTapCancel,
+      onTap: widget.loading ? null : widget.onPressed,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color:
+                widget.loading ? widget.color.withOpacity(0.7) : widget.color,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: widget.loading
+                ? []
+                : [
+                    BoxShadow(
+                      color: widget.color.withOpacity(0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+          ),
+          alignment: Alignment.center,
+          child: widget.loading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2),
+                )
+              : Text(
+                  widget.label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
         ),
       ),
     );
