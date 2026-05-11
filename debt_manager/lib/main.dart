@@ -10,7 +10,6 @@ import 'presentation/screens/customer_detail_screen.dart';
 import 'presentation/screens/add_debt_screen.dart';
 import 'presentation/screens/add_credit_screen.dart';
 import 'presentation/screens/privacy_policy_screen.dart';
-import 'providers/auth_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
