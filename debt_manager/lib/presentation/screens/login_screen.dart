@@ -31,7 +31,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     HapticFeedback.lightImpact();
     if (!_formKey.currentState!.validate()) return;
 
-    // Show overlay immediately
     setState(() => _loading = true);
 
     final ok = await ref.read(authProvider.notifier).login(
@@ -42,8 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!mounted) return;
 
     if (ok) {
-      // Keep loading true — router will navigate away
-      // No need to setState here
+      context.go('/');
     } else {
       setState(() => _loading = false);
       HapticFeedback.heavyImpact();
@@ -158,7 +156,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 28),
 
-                      // ── Sign In Button ────────────────────
+                      // ── Button ────────────────────────────
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -215,51 +213,68 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
 
         // ── Loading overlay ────────────────────────────────
+        // ── Loading overlay ────────────────────────────────────
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 250),
           child: _loading
               ? Container(
                   key: const ValueKey('loader'),
-                  color: Colors.black54,
+                  color: Colors.black.withOpacity(0.6),
                   width: double.infinity,
                   height: double.infinity,
                   child: Center(
                     child: Container(
+                      width: 220,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 40, vertical: 32),
+                          horizontal: 28, vertical: 32),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
+                            color: AppTheme.primaryGreen.withOpacity(0.25),
+                            blurRadius: 40,
+                            offset: const Offset(0, 12),
                           ),
                         ],
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CircularProgressIndicator(
-                            color: AppTheme.primaryGreen,
-                            strokeWidth: 3.5,
+                          // ── Animated store icon ───────────────
+                          _PulsingIcon(),
+                          const SizedBox(height: 24),
+
+                          // ── Progress bar ──────────────────────
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: LinearProgressIndicator(
+                              backgroundColor:
+                                  AppTheme.primaryGreen.withOpacity(0.12),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppTheme.primaryGreen),
+                              minHeight: 4,
+                            ),
                           ),
                           const SizedBox(height: 20),
+
+                          // ── Text ─────────────────────────────
                           Text(
-                            'Signing in...',
+                            'Signing in',
                             style: TextStyle(
                               color: AppTheme.textPrimary,
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
+                              letterSpacing: 0.2,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Please wait',
+                            'Connecting to your shop...',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               color: AppTheme.textSecondary,
-                              fontSize: 13,
+                              fontSize: 12,
                             ),
                           ),
                         ],
@@ -270,6 +285,64 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               : const SizedBox.shrink(key: ValueKey('empty')),
         ),
       ],
+    );
+  }
+}
+
+class _PulsingIcon extends StatefulWidget {
+  const _PulsingIcon();
+
+  @override
+  State<_PulsingIcon> createState() => _PulsingIconState();
+}
+
+class _PulsingIconState extends State<_PulsingIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
+
+  late final Animation<double> _scale = Tween<double>(
+    begin: 0.88,
+    end: 1.08,
+  ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+
+  late final Animation<double> _opacity = Tween<double>(
+    begin: 0.5,
+    end: 1.0,
+  ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) => Transform.scale(
+        scale: _scale.value,
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppTheme.primaryGreen.withOpacity(_opacity.value * 0.15),
+            border: Border.all(
+              color: AppTheme.primaryGreen.withOpacity(_opacity.value * 0.4),
+              width: 2,
+            ),
+          ),
+          child: Icon(
+            Icons.store_rounded,
+            color: AppTheme.primaryGreen.withOpacity(_opacity.value),
+            size: 30,
+          ),
+        ),
+      ),
     );
   }
 }

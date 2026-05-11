@@ -30,11 +30,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _init() async {
-    final user = await _service.getMe();
+    // Check token exists locally first — no network call
+    final token = await _service.getMe();
     state = AuthState(
       status:
-          user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated,
-      user: user,
+          token != null ? AuthStatus.authenticated : AuthStatus.unauthenticated,
+      user: token,
     );
   }
 

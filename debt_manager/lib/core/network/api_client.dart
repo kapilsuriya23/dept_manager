@@ -16,9 +16,8 @@ class ApiException implements Exception {
 class ApiClient {
   ApiClient._();
   static final ApiClient instance = ApiClient._();
-
   static const String _tokenKey = 'auth_token';
-  static const _timeout = Duration(seconds: 30);
+  static const _timeout = Duration(seconds: 60);
 
   Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
@@ -56,46 +55,51 @@ class ApiClient {
     }
   }
 
+  Future<http.Response> _withRetry(Future<http.Response> Function() fn) async {
+    try {
+      return await fn();
+    } on TimeoutException {
+      await Future.delayed(const Duration(seconds: 4));
+      try {
+        return await fn();
+      } on TimeoutException {
+        throw ApiException('Server is starting up, please try again.');
+      }
+    }
+  }
+
   Future<Map<String, dynamic>> get(String path, {bool auth = true}) async {
     try {
-      final res = await http
-          .get(_uri(path), headers: await _headers(auth: auth))
-          .timeout(_timeout);
+      final h = await _headers(auth: auth);
+      final res = await _withRetry(
+          () => http.get(_uri(path), headers: h).timeout(_timeout));
       return _parse(res);
-    } on TimeoutException {
-      throw ApiException(
-          'Cannot reach server. Check your IP in api_endpoints.dart and ensure backend is running.');
     } on SocketException {
-      throw ApiException('No internet connection or server unreachable.');
+      throw ApiException('No internet connection.');
     }
   }
 
   Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body,
       {bool auth = false}) async {
     try {
-      final res = await http
-          .post(_uri(path),
-              headers: await _headers(auth: auth), body: jsonEncode(body))
-          .timeout(_timeout);
+      final h = await _headers(auth: auth);
+      final res = await _withRetry(() => http
+          .post(_uri(path), headers: h, body: jsonEncode(body))
+          .timeout(_timeout));
       return _parse(res);
-    } on TimeoutException {
-      throw ApiException(
-          'Cannot reach server. Check your IP in api_endpoints.dart and ensure backend is running.');
     } on SocketException {
-      throw ApiException('No internet connection or server unreachable.');
+      throw ApiException('No internet connection.');
     }
   }
 
   Future<Map<String, dynamic>> put(
       String path, Map<String, dynamic> body) async {
     try {
-      final res = await http
-          .put(_uri(path),
-              headers: await _headers(auth: true), body: jsonEncode(body))
-          .timeout(_timeout);
+      final h = await _headers(auth: true);
+      final res = await _withRetry(() => http
+          .put(_uri(path), headers: h, body: jsonEncode(body))
+          .timeout(_timeout));
       return _parse(res);
-    } on TimeoutException {
-      throw ApiException('Cannot reach server.');
     } on SocketException {
       throw ApiException('No internet connection.');
     }
@@ -103,12 +107,10 @@ class ApiClient {
 
   Future<Map<String, dynamic>> patch(String path) async {
     try {
-      final res = await http
-          .patch(_uri(path), headers: await _headers(auth: true))
-          .timeout(_timeout);
+      final h = await _headers(auth: true);
+      final res = await _withRetry(
+          () => http.patch(_uri(path), headers: h).timeout(_timeout));
       return _parse(res);
-    } on TimeoutException {
-      throw ApiException('Cannot reach server.');
     } on SocketException {
       throw ApiException('No internet connection.');
     }
@@ -116,12 +118,10 @@ class ApiClient {
 
   Future<Map<String, dynamic>> delete(String path) async {
     try {
-      final res = await http
-          .delete(_uri(path), headers: await _headers(auth: true))
-          .timeout(_timeout);
+      final h = await _headers(auth: true);
+      final res = await _withRetry(
+          () => http.delete(_uri(path), headers: h).timeout(_timeout));
       return _parse(res);
-    } on TimeoutException {
-      throw ApiException('Cannot reach server.');
     } on SocketException {
       throw ApiException('No internet connection.');
     }
