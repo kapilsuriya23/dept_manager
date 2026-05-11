@@ -27,28 +27,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
     HapticFeedback.lightImpact();
     if (!_formKey.currentState!.validate()) return;
+
+    // Show overlay immediately
     setState(() => _loading = true);
+
     final ok = await ref.read(authProvider.notifier).login(
           phone: _phoneCtrl.text.trim(),
           password: _passCtrl.text,
         );
-    if (mounted) {
+
+    if (!mounted) return;
+
+    if (ok) {
+      // Keep loading true — router will navigate away
+      // No need to setState here
+    } else {
       setState(() => _loading = false);
-      if (!ok) {
-        HapticFeedback.heavyImpact();
-        final err = ref.read(authProvider).error ?? 'Login failed';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(err),
-            backgroundColor: AppTheme.dangerColor,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
+      HapticFeedback.heavyImpact();
+      final err = ref.read(authProvider).error ?? 'Login failed';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: AppTheme.dangerColor,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
   }
 
@@ -64,7 +72,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const SizedBox(height: 40),
 
-                // ── Logo ─────────────────────────────────────
+                // ── Logo ───────────────────────────────────
                 Center(
                   child: Column(
                     children: [
@@ -78,21 +86,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             size: 48, color: AppTheme.primaryGreen),
                       ),
                       const SizedBox(height: 16),
-                      Text('Welcome Back',
-                          style: TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700)),
+                      Text(
+                        'Welcome Back',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       const SizedBox(height: 6),
-                      Text('Sign in to your shop account',
-                          style: TextStyle(
-                              color: AppTheme.textSecondary, fontSize: 14)),
+                      Text(
+                        'Sign in to your shop account',
+                        style: TextStyle(
+                            color: AppTheme.textSecondary, fontSize: 14),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 40),
 
-                // ── Form ─────────────────────────────────────
+                // ── Form ───────────────────────────────────
                 Form(
                   key: _formKey,
                   child: Column(
@@ -100,6 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       TextFormField(
                         controller: _phoneCtrl,
                         keyboardType: TextInputType.phone,
+                        enabled: !_loading,
                         style: TextStyle(color: AppTheme.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Phone Number',
@@ -120,6 +134,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       TextFormField(
                         controller: _passCtrl,
                         obscureText: _obscure,
+                        enabled: !_loading,
                         style: TextStyle(color: AppTheme.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Password',
@@ -132,8 +147,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   : Icons.visibility_outlined,
                               color: AppTheme.textHint,
                             ),
-                            onPressed: () =>
-                                setState(() => _obscure = !_obscure),
+                            onPressed: _loading
+                                ? null
+                                : () => setState(() => _obscure = !_obscure),
                           ),
                         ),
                         validator: (v) => (v == null || v.isEmpty)
@@ -142,7 +158,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 28),
 
-                      // ── Button ────────────────────────────
+                      // ── Sign In Button ────────────────────
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -150,6 +166,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryGreen,
                             foregroundColor: Colors.white,
+                            disabledBackgroundColor:
+                                AppTheme.primaryGreen.withOpacity(0.7),
                             elevation: 3,
                             shadowColor: AppTheme.primaryGreen.withOpacity(0.4),
                             shape: RoundedRectangleBorder(
@@ -157,9 +175,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text('Sign In',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 15)),
+                          child: const Text(
+                            'Sign In',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 15),
+                          ),
                         ),
                       ),
                     ],
@@ -167,18 +187,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // ── Register link ─────────────────────────────
+                // ── Register link ──────────────────────────
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Don't have an account? ",
-                        style: TextStyle(color: AppTheme.textSecondary)),
+                    Text(
+                      "Don't have an account? ",
+                      style: TextStyle(color: AppTheme.textSecondary),
+                    ),
                     GestureDetector(
                       onTap: _loading ? null : () => context.go('/register'),
-                      child: Text('Register',
-                          style: TextStyle(
-                              color: AppTheme.primaryGreen,
-                              fontWeight: FontWeight.w600)),
+                      child: Text(
+                        'Register',
+                        style: TextStyle(
+                          color: _loading
+                              ? AppTheme.textHint
+                              : AppTheme.primaryGreen,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -187,129 +214,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
 
-        // ── Full screen loading overlay ─────────────────────
-        if (_loading)
-          Container(
-            color: Colors.black.withOpacity(0.45),
-            child: Center(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardBg,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(
-                      color: AppTheme.primaryGreen,
-                      strokeWidth: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Signing in...',
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+        // ── Loading overlay ────────────────────────────────
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: _loading
+              ? Container(
+                  key: const ValueKey('loader'),
+                  color: Colors.black54,
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 40, vertical: 32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(
+                            color: AppTheme.primaryGreen,
+                            strokeWidth: 3.5,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Signing in...',
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Please wait',
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _ActionButton extends StatefulWidget {
-  final String label;
-  final bool loading;
-  final VoidCallback onPressed;
-  final Color color;
-
-  const _ActionButton({
-    required this.label,
-    required this.loading,
-    required this.onPressed,
-    required this.color,
-  });
-
-  @override
-  State<_ActionButton> createState() => _ActionButtonState();
-}
-
-class _ActionButtonState extends State<_ActionButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 80),
-    lowerBound: 0.0,
-    upperBound: 0.05,
-  );
-
-  late final Animation<double> _scale = Tween<double>(
-    begin: 1.0,
-    end: 0.95,
-  ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _onTapDown(TapDownDetails _) => _ctrl.forward();
-  void _onTapUp(TapUpDetails _) => _ctrl.reverse();
-  void _onTapCancel() => _ctrl.reverse();
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: widget.loading ? null : _onTapDown,
-      onTapUp: widget.loading ? null : _onTapUp,
-      onTapCancel: widget.loading ? null : _onTapCancel,
-      onTap: widget.loading ? null : widget.onPressed,
-      child: ScaleTransition(
-        scale: _scale,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color:
-                widget.loading ? widget.color.withOpacity(0.7) : widget.color,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: widget.loading
-                ? []
-                : [
-                    BoxShadow(
-                      color: widget.color.withOpacity(0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-          ),
-          alignment: Alignment.center,
-          child: widget.loading
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2),
-                )
-              : Text(
-                  widget.label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
                   ),
-                ),
+                )
+              : const SizedBox.shrink(key: ValueKey('empty')),
         ),
-      ),
+      ],
     );
   }
 }
