@@ -75,6 +75,44 @@ class CustomerDetailScreen extends ConsumerWidget {
                         TextStyle(color: AppTheme.dangerColor, fontSize: 13)),
               ),
 
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: txState.netBalance > 0
+                    ? AppTheme.dangerColor.withOpacity(0.07)
+                    : AppTheme.primaryGreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: txState.netBalance > 0
+                      ? AppTheme.dangerColor.withOpacity(0.25)
+                      : AppTheme.borderColor,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Customer Address:',
+                          style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text(customer['address'] as String? ?? 'Not provided',
+                          style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 15,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             // ── Balance Summary ─────────────────────────────
             Container(
               padding: const EdgeInsets.all(18),
