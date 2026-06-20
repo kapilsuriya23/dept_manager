@@ -78,6 +78,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             onSelected: (value) async {
               if (value == 'privacy') {
                 context.push('/privacy-policy');
+              } else if (value == 'analytics') {
+                context.push('/analytics');
               } else if (value == 'logout') {
                 await ref.read(authProvider.notifier).logout();
                 if (context.mounted) context.go('/login');
@@ -91,6 +93,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       color: AppTheme.primaryGreen, size: 18),
                   const SizedBox(width: 10),
                   Text('Privacy Policy',
+                      style:
+                          TextStyle(color: AppTheme.textPrimary, fontSize: 14)),
+                ]),
+              ),
+              PopupMenuItem(
+                value: 'analytics',
+                child: Row(children: [
+                  Icon(Icons.bar_chart_rounded,
+                      color: AppTheme.primaryGreen, size: 18),
+                  const SizedBox(width: 10),
+                  Text('Analytics',
                       style:
                           TextStyle(color: AppTheme.textPrimary, fontSize: 14)),
                 ]),

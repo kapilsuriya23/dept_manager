@@ -10,6 +10,7 @@ import 'presentation/screens/customer_detail_screen.dart';
 import 'presentation/screens/add_debt_screen.dart';
 import 'presentation/screens/add_credit_screen.dart';
 import 'presentation/screens/privacy_policy_screen.dart';
+import 'presentation/screens/analytics_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +58,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/privacy-policy',
       builder: (c, s) => const PrivacyPolicyScreen(),
+    ),
+    GoRoute(
+      path: '/analytics',
+      builder: (c, s) => const AnalyticsScreen(),
     ),
   ],
 );
