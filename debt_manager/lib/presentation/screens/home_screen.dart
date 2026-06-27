@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/debt_provider.dart';
+import 'package:printing/printing.dart';
+import 'package:intl/intl.dart';
+import '../../data/services/pdf_service.dart';
+import '../../providers/auth_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -30,6 +34,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.read(customersProvider.notifier).fetchAll();
+    }
+  }
+
+  Future<void> _downloadDashboardPdf() async {
+    final customerState = ref.read(customersProvider);
+    final user = ref.read(authProvider).user;
+    final shopName = user?.shopName ?? 'DebtBook';
+
+    if (customerState.customers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('No customers to generate report'),
+          backgroundColor: AppTheme.dangerColor,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final pdfBytes = await PdfService.generateDashboardReport(
+        shopName: shopName,
+        customers: customerState.customers,
+      );
+      await Printing.layoutPdf(
+        onLayout: (_) async => pdfBytes,
+        name:
+            'dashboard_report_${DateFormat('ddMMyyyy').format(DateTime.now())}.pdf',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate report: $e'),
+            backgroundColor: AppTheme.dangerColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -68,6 +113,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
               ),
             ),
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf_outlined,
+                color: AppTheme.dangerColor),
+            tooltip: 'Download Report',
+            onPressed: customerState.loading ? null : _downloadDashboardPdf,
+          ),
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: AppTheme.textPrimary),
             color: AppTheme.cardBg,

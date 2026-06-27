@@ -24,7 +24,8 @@ class CustomerDetailScreen extends ConsumerWidget {
       final pdfBytes = await PdfService.generateCustomerStatement(
         shopName: shopName,
         customer: customer,
-        debts: txState.debts, // ← only debts, no credits
+        debts: txState.debts,
+        credits: txState.credits, // ← pass credits
       );
       await Printing.layoutPdf(
         onLayout: (_) async => pdfBytes,
@@ -43,7 +44,6 @@ class CustomerDetailScreen extends ConsumerWidget {
       }
     }
   }
-  
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
