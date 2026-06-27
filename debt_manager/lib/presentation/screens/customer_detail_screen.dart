@@ -4,10 +4,46 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/debt_provider.dart';
+import 'package:printing/printing.dart';
+import '../../data/services/pdf_service.dart';
+import '../../providers/auth_provider.dart';
 
 class CustomerDetailScreen extends ConsumerWidget {
   final String customerId;
   const CustomerDetailScreen({super.key, required this.customerId});
+
+  Future<void> _downloadPdf(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> customer,
+    TransactionState txState,
+  ) async {
+    final user = ref.read(authProvider).user;
+    final shopName = user?.shopName ?? 'DebtBook';
+    try {
+      final pdfBytes = await PdfService.generateCustomerStatement(
+        shopName: shopName,
+        customer: customer,
+        debts: txState.debts, // ← only debts, no credits
+      );
+      await Printing.layoutPdf(
+        onLayout: (_) async => pdfBytes,
+        name:
+            '${customer['name']}_statement_${DateFormat('ddMMyyyy').format(DateTime.now())}.pdf',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate PDF: $e'),
+            backgroundColor: AppTheme.dangerColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+  
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -46,6 +82,14 @@ class CustomerDetailScreen extends ConsumerWidget {
                 ),
               ),
             ),
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf_outlined,
+                color: AppTheme.dangerColor),
+            tooltip: 'Download Statement',
+            onPressed: txState.loading
+                ? null
+                : () => _downloadPdf(context, ref, customer, txState),
+          ),
           IconButton(
             icon: Icon(Icons.refresh, color: AppTheme.textSecondary),
             onPressed: () =>
