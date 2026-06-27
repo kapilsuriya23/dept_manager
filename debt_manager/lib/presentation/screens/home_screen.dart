@@ -7,7 +7,6 @@ import '../../providers/debt_provider.dart';
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import '../../data/services/pdf_service.dart';
-import '../../providers/auth_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
